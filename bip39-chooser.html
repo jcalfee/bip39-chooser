@@ -1,8 +1,11 @@
-<html>
+<!doctype html>
+<html lang="en">
 <head>
 <meta charset="utf-8">
+<meta name="author" content="jcalfee" />
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="description" content="BIP39 creator / chooser">
 <title>Private Key Phrase Chooser (BIP39)</title>
-<script>TITLE='Private Key Phrase Chooser (BIP39)'</script>
 
 <link href="bip39-chooser.css" rel="stylesheet" type="text/css"/>
 
@@ -113,8 +116,14 @@ function createChooserTable() {
       appendTd(document.createTextNode(''))
 
       var btn = document.createElement('button')
+      btn.id = 'submitPhrase'
       btn.appendChild(document.createTextNode('✔'))
       span.appendChild(btn)
+
+      const lbl = createEl('label', 'Finished!')
+      lbl.setAttribute('for', 'submitPhrase')
+      span.appendChild(createEl('span', ' '))
+      span.appendChild(createEl('small', lbl))
 
       appendTd(span)
     }
@@ -162,17 +171,7 @@ function createValidMnemonic() {
 function createPhraseDisplay(phrase, element) {
   const words = phrase.split(' ')
   const div = document.createElement('div');
-
-  // div.appendChild(createEl('br'))
-  // div.appendChild(createEl('u',
-  //   language.charAt(0).toUpperCase() + language.substring(1) + ' ' +
-  //   totalWordCount + ' word Bip39 phrase'
-  // ))
-  // div.appendChild(createEl('br'))
-  // div.appendChild(createEl('br'))
-
   const tbl = document.createElement('table');
-
   const tbdy = document.createElement('tbody');
 
   let tr, appendTd = el => appendTrTd(tr, el)
@@ -186,9 +185,6 @@ function createPhraseDisplay(phrase, element) {
     var id = leftCount++
     appendTd(createEl('small', id))
     let wrd = createEl('div', words[id - 1])
-    // let wrd = document.createElement('input')
-    // wrd.value = words[id - 1]
-    // wrd.setAttribute('readonly', 'true')
     wrd.className += ' mnemonic-word'
     appendTd(wrd)
 
@@ -196,9 +192,6 @@ function createPhraseDisplay(phrase, element) {
     if(words.length >= id) {
       appendTd(createEl('small', id))
       wrd = createEl('div', words[id - 1])
-      // wrd = document.createElement('input')
-      // wrd.value = words[id - 1]
-      // wrd.setAttribute('readonly', 'true')
       wrd.className += 'mnemonic-word'
       appendTd(wrd)
     }
@@ -209,7 +202,7 @@ function createPhraseDisplay(phrase, element) {
 
   const fullPhrase = createEl('div', phrase)
   fullPhrase.id = 'fullPhrase'
-  fullPhrase.className += 'CopyText'
+  fullPhrase.className = 'CopyText row'
   fullPhrase.onclick = function() {
     if (document.selection) { // Non-standard
         var range = document.body.createTextRange();
@@ -232,223 +225,222 @@ function createPhraseDisplay(phrase, element) {
 </head>
 
 <body>
-  <h1><a id="start"></a>BIP39 Mnemonic Phrase</h1>
-
-  <script>
-  function onLoad(lang = 'english', wordCount = 24) {
-    init(lang, wordCount)
-
-    const parentChooser = document.getElementById('mnemonicPhraseChooser')
-    while(parentChooser.firstChild !== null) {
-      parentChooser.removeChild(parentChooser.firstChild)
-    }
-
-    const parentTable = document.getElementById('mnemonicPhraseTable')
-    while(parentTable.firstChild !== null) {
-      parentTable.removeChild(parentTable.firstChild)
-    }
-
-    const child = createChooserTable()
-    parentChooser.appendChild(child)
-
-    document.getElementById('Word1').focus()
-  }
-  </script>
-
-  <form onLoad="onSubmitSettings(); return false" id="settingsForm">
+  <header class="container">
+    <h2>BIP39 Mnemonic Phrase</h2>
+  </header>
+  <main class="container">
     <script>
-    function onSubmitSettings() {
-      try {
-        const lang = document.getElementById('language')
-        const wordCount = document.getElementById('wordCount')
-        onLoad(lang.value, Number(wordCount.value))
+    function onLoad(lang = 'english', wordCount = 24) {
+      init(lang, wordCount)
 
-        const settingsForm = document.getElementById('settingsForm')
-        while(settingsForm.firstChild !== null) {
-          settingsForm.removeChild(settingsForm.firstChild)
-        }
-
-        document.getElementById('greetings').style = 'display: none';
-        document.getElementById('instructions').style = 'display: block';
-      } catch(e){
-        console.error(e)
+      const parentChooser = document.getElementById('mnemonicPhraseChooser')
+      while(parentChooser.firstChild !== null) {
+        parentChooser.removeChild(parentChooser.firstChild)
       }
+
+      const parentTable = document.getElementById('mnemonicPhraseTable')
+      while(parentTable.firstChild !== null) {
+        parentTable.removeChild(parentTable.firstChild)
+      }
+
+      const child = createChooserTable()
+      parentChooser.appendChild(child)
+
+      // document.getElementById('Word1').focus()
     }
     </script>
 
-    <table>
-      <tbody>
-        <tr>
-          <td>
-            <label for="language">Language</label>
-          </td>
-          <td>
-            <select id="language">
-              <option value="spanish">Spanish</option>
-              <option value="korean">Korean</option>
-              <option value="japanese">Japanese</option>
-              <option value="italian">Italian</option>
-              <option value="french">French</option>
-              <option value="english" selected>English</option>
-              <option value="chinese_traditional">Chinese Traditional</option>
-              <option value="chinese_simplified">Chinese Simplified</option>
-            </select>
-          </td>
-        </tr>
-        <tr>
-          <td>
-            <label for="language">Word Count</label>
-          </td>
-          <td>
-            <select id="wordCount">
-              <option value="12">12</option>
-              <option value="15">15</option>
-              <option value="18">18</option>
-              <option value="21">21</option>
-              <option value="24" selected>24</option>
-            </select>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-
-    <p>
-      <button onClick="onSubmitSettings(true); return false">✔</button>
-      <small>Get Started</small>
-    </p>
-  </form>
-
-  <form onSubmit="onSubmitPhrase(); return false">
-    <script>
-    function onSubmitPhrase(e) {
-      // catch all errors to prevent form submit of sensitive information
-      try {
-        const mnemonic = createValidMnemonic()
-        if(!bip39.validateMnemonic(mnemonic, bip39.wordlists[language])) {
-          throw new Error('invalid mnemonic')
-        }
-
-        function componentWillUpdate() {
-          // remove prior screen
-          const parentChooser = document.getElementById('mnemonicPhraseChooser');
-          while(parentChooser.firstChild !== null) {
-            parentChooser.removeChild(parentChooser.firstChild);
+    <form onSubmit="onSubmitPhrase(); return false">
+      <script>
+      function onSubmitPhrase(e) {
+        // catch all errors to prevent form submit of sensitive information
+        try {
+          const mnemonic = createValidMnemonic()
+          if(!bip39.validateMnemonic(mnemonic, bip39.wordlists[language])) {
+            throw new Error('invalid mnemonic')
           }
 
-          document.getElementById('instructions').style = 'display: none'
+          function componentWillUpdate() {
+            // remove prior screen
+            const parentChooser = document.getElementById('mnemonicPhraseChooser');
+            while(parentChooser.firstChild !== null) {
+              parentChooser.removeChild(parentChooser.firstChild);
+            }
 
+            document.getElementById('instructions').style = 'display: none'
+          }
+
+          const parentDisplay = document.getElementById('mnemonicPhraseTable');
+          const childDisplay = createPhraseDisplay(mnemonic)
+          componentWillUpdate()
+          parentDisplay.appendChild(childDisplay)
+
+        } catch(e){
+          console.error(e)
         }
-
-        const parentDisplay = document.getElementById('mnemonicPhraseTable');
-        const childDisplay = createPhraseDisplay(mnemonic)
-        componentWillUpdate()
-        parentDisplay.appendChild(childDisplay)
-
-      } catch(e){
-        console.error(e)
       }
-    }
-    </script>
-    <div id="mnemonicPhraseChooser"></div>
-  </form>
+      </script>
+      <div id="mnemonicPhraseChooser"></div>
+    </form>
 
-  <div id="mnemonicPhraseTable"></div>
+    <div id="mnemonicPhraseTable"></div>
 
-  <div id="greetings">
-    <h1>Greetings!</h1>
+    <div id="greetings">
+      <h4>Greetings!</h4>
 
-    <p>This page can generate a secure random mnemonic phrase that you may then
-      personally modify.  Your personal word selections help you to ensure that
-      the phrase truly is random.  This page calculates the last word
-      programmatically so you'll have a valid Bip39 phrase.
-    </p>
+      <p>This page can generate a secure random mnemonic phrase that you may then
+        personally modify.  Your personal word selections help you to ensure that
+        the phrase truly is random.  This page calculates the last word
+        programmatically so you'll have a valid Bip39 phrase.
+      </p>
 
-    <p>Although the initial phrase is very random and very strong, adjusting
-      each word gives benefits:
-    </p>
-    <ul>
-      <li>Generating the phrase here allows you to preform a mnemonic phrase
-        restore on your chosen device or software prior to using.
-      </li>
-      <li>Choosing a mnemonic phrase yourself helps protect against a flawed
-        or malicious random number generator.</li>
-    </ul>
-
-    <p>Additional precautions should be taken with this process to help
-      achieve more hardware wallet-like security.  The idea is to protect
-      against a root kit screen capture program.
-    </p>
-
-    <h1>About the Mnemonic Phrase</h1>
-    <p>
-      The <a href="https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki">BIP39 Mnemonic phrase</a>
-      is a widely used standard for encoding a private seed used to access private
-      keys on various blockchains or cryptographic networks.
-
-      The Mnemonic phrase makes a good user-managed private key because it provides:
+      <p>Although the initial phrase is very random and very strong, adjusting
+        each word gives benefits:
+      </p>
       <ul>
-        <li>Words that are not simular</li>
-        <li>Self checking, you can be warned if any word is out of place</li>
-        <li>A short dictionary for spellchecking or auto-complete</li>
+        <li>Generating the phrase here allows you to preform a mnemonic phrase
+          restore on your chosen device or software prior to using.
+        </li>
+        <li>Choosing a mnemonic phrase yourself helps protect against a flawed
+          or malicious random number generator.</li>
       </ul>
-    </p>
 
-    <h1>Checksum</h1>
+      <p>Additional precautions should be taken with this process to help
+        achieve more hardware wallet-like security.  The idea is to protect
+        against a root kit screen capture program.
+      </p>
 
-    <p>The last word is chosen by an algorithm designed to validate the
-    entire phrase.</p>
+      <h4>Get Started</h4>
 
-    <h1>Deterministic Phrases</h1>
-    <p>Accepting a generated mnemonic phrase is a bad idea if the random
-      number generator can not be fully audited and understood.  A bug or
-      exploit in the random number generator could allow a 3rd party to
-      calculate all private mnemonic phrases created by the the device or
-      code in question.  This is a hard to detect remote attack.  Detection
-      of this attack may require reverse engineering code, analyzing
-      micro-chip circuitry, or observing that other users are get hacked.
-    </p>
+      <form onLoad="onSubmitSettings(); return false" id="settingsForm">
+        <script>
+        function onSubmitSettings() {
+          try {
+            const lang = document.getElementById('language')
+            const wordCount = document.getElementById('wordCount')
+            onLoad(lang.value, Number(wordCount.value))
 
-    <h1>Get Started</h1>
+            const settingsForm = document.getElementById('settingsForm')
+            while(settingsForm.firstChild !== null) {
+              settingsForm.removeChild(settingsForm.firstChild)
+            }
 
-    <p>Click on the Get Started button <a href="#start">above</a>.</p>
+            document.getElementById('greetings').style = 'display: none';
+            document.getElementById('instructions').style = 'display: block';
+          } catch(e){
+            console.error(e)
+          }
+        }
+        </script>
 
-  </div>
+        <table>
+          <tbody>
+            <tr>
+              <td>
+                <label for="language">Language</label>
+              </td>
+              <td>
+                <div class="input-field col s12">
+                  <select id="language">
+                    <option value="spanish">Spanish</option>
+                    <option value="korean">Korean</option>
+                    <option value="japanese">Japanese</option>
+                    <option value="italian">Italian</option>
+                    <option value="french">French</option>
+                    <option value="english" selected>English</option>
+                    <option value="chinese_traditional">Chinese Traditional</option>
+                    <option value="chinese_simplified">Chinese Simplified</option>
+                  </select>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <label for="language">Word Count</label>
+              </td>
+              <td>
+                <select id="wordCount">
+                  <option value="12">12</option>
+                  <option value="15">15</option>
+                  <option value="18">18</option>
+                  <option value="21">21</option>
+                  <option value="24" selected>24</option>
+                </select>
+              </td>
+            </tr>
+          </tbody>
+        </table>
 
-  <div id="instructions" style="display: none">
-    <h1>Tips</h1>
-    <ul>
-      <li>Use without an Internet connection</li>
-      <li>Practice on-line first (refresh the page to restart)</li>
-      <li>Use a Private Browsing Window (this disables plug-ins and storage).  Your browser may call this feature:</li>
+        <p>
+          <button id="submitSettings" onClick="onSubmitSettings(true); return false">✔</button>
+          <small><label for="submitSettings">Get Started</label></small>
+        </p>
+      </form>
+
+      <h2>About the Mnemonic Phrase</h2>
+      <p>
+        The <a href="https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki">BIP39 Mnemonic phrase</a>
+        is a widely used standard for encoding a private seed used to access private
+        keys on various blockchains or cryptographic networks.
+
+        The Mnemonic phrase makes a good user-managed private key because it provides:
+        <ul>
+          <li>Words that are not simular</li>
+          <li>Self checking, you can be warned if any word is out of place</li>
+          <li>A short dictionary for spellchecking or auto-complete</li>
+        </ul>
+      </p>
+
+      <h2>Checksum</h2>
+
+      <p>The last word is chosen by an algorithm designed to validate the
+      entire phrase.</p>
+
+      <h2>Deterministic Phrases</h2>
+      <p>Accepting a generated mnemonic phrase is a bad idea if the random
+        number generator can not be fully audited and understood.  A bug or
+        exploit in the random number generator could allow a 3rd party to
+        calculate all private mnemonic phrases created by the the device or
+        code in question.  This is a hard to detect remote attack.  Detection
+        of this attack may require reverse engineering code, analyzing
+        micro-chip circuitry, or observing that other users are get hacked.
+      </p>
+    </div>
+
+    <div id="instructions" style="display: none">
+      <h2>Security Tips</h2>
       <ul>
-        <li>Private Tab</li>
-        <li>New Private Window</li>
-        <li>New Incognito Window</li>
+        <li>Practice on-line first (refresh the page to restart)</li>
+        <li>Turn off the Internet connection while creating your phrase.</li>
+        <li>Open this page in a Private Browsing Window.  The browser will disable web plug-ins and disable or discard web storage when your down.  Your browser may call this feature: Private Tab, New Private Window, New Incognito Window, etc..</li>
+        <li>Change each drop-downs to a new random location (make it random).</li>
+        <li>In the drop-down, the words should be in alphabetical order but each list should start in a random position.</li>
+        <li>Observe the final words chosen then click on the submit button (check icon).  The next view should keep all prior chosen words and add one additional word as the last word in the phrase.</li>
+        <li>Carefully backup the phrase.  For the written backup, write on a hard-surface.</li>
+        <li>Use the new phrase soon in the desired tool like a hardware wallet to restore the phrase.</li>
       </ul>
-      <li>Change each drop-downs to a new random location (make it random).</li>
-      <li>In the drop-down, the words should be in alphabetical order but each list should start in a random position.</li>
-      <li>Observe the final words chosen then click on the submit button (check icon).  The next view should keep all prior chosen words and add one additional word as the last word in the phrase.</li>
-      <li>Carefully backup the phrase.  For the written backup, write on a hard-surface.</li>
-      <li>Use the new phrase in the desired tool like a hardware wallet to restore the phrase.</li>
-      <li>Secure your Hardware (<a href="https://steemit.com/trezor/@furion/build-yourself-a-trezor">guide</a>) – Perform as many of these as possible to match your desired level of security.</li>
+
+      <h4>Secure your Hardware (<a href="https://steemit.com/trezor/@furion/build-yourself-a-trezor">guide</a>)</h4>
+      <p>Perform some or all of the following depending on your desired level of security.</p>
       <ul>
         <li>For cold-storage use the browser's <u>Save page as..</u> feature to make this tool available off-line.  Refresh before you save the page.</li>
         <li>Boot from a secure read-only Linux Distro (live CD, USB, or USB with a read-only lock).</li>
         <li>Disconnect the Internet access (wifi, lifi, Ethernet cable, etc).</li>
         <li>Remove storage media like USBs, hard-drive, or solid state drives.</li>
       </ul>
-    </ul>
 
-    <h1>About the drop-downs</h1>
-    <ul>
-      <li>Each drop down contains the same 2048 words.</li>
-      <li>Drop downs are positioned randomly using a secure random number generator.</li>
-      <li>Drop downs are only created if a secure random number generator is available.</li>
-      <li>They may be slow but you don't have to do this often.</li>
-    </ul>
-  </div>
-
-  <hr/>
-  License: <a href="http://unlicense.org">unlicense</a> | Author: jamesc | Contact: <u>@slim2k</u> keybase, <u>@slim180</u> telegram, <a href="https://github.com/jcalfee">jcalfee</a> github
+      <h2>About the drop-downs</h2>
+      <ul>
+        <li>Each drop down contains the same 2048 words.</li>
+        <li>Drop downs are positioned randomly using a secure random number generator.</li>
+        <li>Drop downs are only created if a secure random number generator is available.</li>
+        <li>They may be slow but you don't have to do this often.</li>
+      </ul>
+    </div>
+  </main>
+  <footer>
+    <hr/>
+    License: <a href="http://unlicense.org">unlicense</a> | Author: <a href="https://steemit.com/@jamesc">jamesc</a> | Contact: <u>slim2k</u>@keybase, <u>slim180</u>@telegram, github/<a href="https://github.com/jcalfee">jcalfee</a>
+  </footer>
 </body>
 </html>
