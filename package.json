@@ -1,0 +1,25 @@
+{
+  "name": "bip39-chooser",
+  "version": "1.0.0",
+  "description": "Choose your own Mnemonic phrase without trusting a random number generator.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "randomBytes": "browserify -o ./lib/randomBytes.js -s randomBytes -r randombytes",
+    "bip39": "browserify -o ./lib/bip39.js -s bip39 -r bip39",
+    "createHash": "browserify -o ./lib/createHash.js -s createHash -r create-hash",
+    "saveBuffer": "browserify -o ./lib/safeBuffer.js -s safeBuffer -r safe-buffer",
+    "build": "npm run randomBytes && npm run bip39 && npm run createHash && npm run saveBuffer"
+  },
+  "author": "jamesc",
+  "license": "MIT",
+  "dependencies": {
+    "bip39": "^2.5.0",
+    "create-hash": "^1.2.0",
+    "randombytes": "^2.0.6",
+    "safe-buffer": "^5.1.2"
+  },
+  "devDependencies": {
+    "browserify": "^16.2.3"
+  }
+}

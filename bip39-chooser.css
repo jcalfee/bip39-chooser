@@ -1,0 +1,27 @@
+
+body {
+  /* background-color: #002635;
+  filter: invert(100%); */
+}
+
+select.mnemonic-word {
+  width: 128px;
+  height: 30px;
+  margin: 1px;
+}
+
+div.mnemonic-word {
+  width: 123px;
+  height: 27px;
+  padding-top: 3px;
+  padding-left: 5px;
+  border: 1px inset rgb(232, 232, 231);
+}
+
+.CopyText {
+  width: 290px;
+	border: 1px solid purple;
+	padding-left: .5em;
+	padding-right: .5em;
+	font-family: monospace;
+}

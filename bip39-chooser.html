@@ -1,0 +1,454 @@
+<html>
+<head>
+<meta charset="utf-8">
+<title>Private Key Phrase Chooser (BIP39)</title>
+<script>TITLE='Private Key Phrase Chooser (BIP39)'</script>
+
+<link href="bip39-chooser.css" rel="stylesheet" type="text/css"/>
+
+<script src="lib/randomBytes.js"></script>
+<script src="lib/bip39.js"></script>
+<script src="lib/createHash.js"></script>
+<script src="lib/safeBuffer.js"></script>
+<script>var Buffer = safeBuffer.Buffer</script>
+
+<script>
+const checkSumWordCount = 1
+let bitStrength, totalWordCount, language
+
+function init(lang, wordCount) {
+  language = lang
+  const wordCountIdx = [12, 15, 18, 21, 24].indexOf(wordCount)
+  if(wordCountIdx === -1) {
+    throw new Error('Invalid word count: ' + wordCount)
+  }
+
+  bitStrength = (wordCount * 11) - (4 + wordCountIdx)
+  if([128, 160, 192, 224, 256].indexOf(bitStrength) === -1) {
+    // 128 <= bitStrength <= 256
+    throw new Error('Invalid bit strength: ' + bitStrength)
+  }
+
+  totalWordCount = wordCount // Math.ceil(bitStrength / 11)
+}
+</script>
+
+<script>
+/** @return {number} random 11 bit number (between 0 and 2047) */
+function randomWordPosition() {
+  if(bip39.wordlists[language].length !== Math.pow(2, 11)) {
+    throw new Error('Expecting 2048 words per bip39 spec, instead got ' + bip39.wordlists[language].length)
+  }
+  rndBytes = randomBytes(2)
+  i = rndBytes[0] << 3
+  return i |= rndBytes[1] & 0x7
+}
+</script>
+
+<script>
+function appendTrTd(tr, el) {
+  const td = document.createElement('td');
+  td.appendChild(el)
+  tr.appendChild(td)
+  return td
+}
+
+function createEl(elName, el) {
+  if(typeof el !== 'object') {
+    el = document.createTextNode(el == null ? '' : el)
+  }
+  const parentEl = document.createElement(elName);
+  parentEl.appendChild(el)
+  return parentEl
+}
+</script>
+
+<script>
+function createChooserTable() {
+  const tbl = document.createElement('table');
+  const tbdy = document.createElement('tbody');
+
+  let tr, appendTd = el => appendTrTd(tr, el)
+
+  // drop-down omitting words used in the checksum
+  function createDropdown() {
+    const sel = document.createElement('select');
+
+    let startPos = randomWordPosition()
+
+    for(var i = 0; i < 2048; i++) {
+      const opt = document.createElement('option')
+      const pos = (i + startPos) % 2048
+      opt.value = pos
+      opt.text = bip39.wordlists[language][pos]
+      sel.appendChild(opt)
+    }
+    return sel
+  }
+
+  var leftCount = 1, rightCount = Math.ceil(totalWordCount / 2) + 1
+
+  // 2 column table (one iteration 2 words)
+  for (var i = 0; i < Math.ceil(totalWordCount / 2); i++) {
+    tr = document.createElement('tr');
+
+    var id = leftCount++
+    appendTd(createEl('small', id))
+    var wl = createDropdown()
+    wl.id = 'Word' + id
+    wl.className += ' mnemonic-word'
+    appendTd(wl)
+
+    id = rightCount++
+    if(id < totalWordCount) {
+      appendTd(createEl('small', id))
+      wl = createDropdown()
+      wl.id = 'Word' + id
+      wl.className += ' mnemonic-word'
+      appendTd(wl)
+
+    } else if(id === totalWordCount) {
+      const span = document.createElement('span')
+
+      appendTd(document.createTextNode(''))
+
+      var btn = document.createElement('button')
+      btn.appendChild(document.createTextNode('✔'))
+      span.appendChild(btn)
+
+      appendTd(span)
+    }
+
+    tbdy.appendChild(tr);
+  }
+  tbl.appendChild(tbdy);
+  return tbl
+}
+
+function lpad (str, padString, length) {
+  while (str.length < length) str = padString + str
+  return str
+}
+
+function createValidMnemonic() {
+  let entropyBits = []
+  for(let i = 1; i < totalWordCount; i ++) { // 1 .. totalWordCount (less checksum word)
+    const wordIdx = document.getElementById('Word' + i).value
+    const bits = lpad(Number(wordIdx).toString(2), '0', 11)
+    entropyBits.push(bits)
+  }
+
+  const additionalEntropy = bitStrength - (totalWordCount - checkSumWordCount) * 11
+  if(additionalEntropy) {
+    if(additionalEntropy > 8) {
+      throw new Error('Additional required entropy is unexpectedly high')
+    }
+// console.log('additionalEntropy', additionalEntropy);
+    const rndByte = randomBytes(1)[0]
+    const bits = rndByte.toString(2).substring(0, additionalEntropy)
+    entropyBits.push(bits)
+  }
+
+  var entropyBytes = entropyBits.join('')
+    .match(/(.{1,8})/g).map(bin => parseInt(bin, 2))
+
+  var entropy = Buffer.from(entropyBytes)
+// console.log(entropy.toString('hex'));
+  return bip39.entropyToMnemonic(entropy, bip39.wordlists[language])
+}
+</script>
+
+<script>
+function createPhraseDisplay(phrase, element) {
+  const words = phrase.split(' ')
+  const div = document.createElement('div');
+
+  // div.appendChild(createEl('br'))
+  // div.appendChild(createEl('u',
+  //   language.charAt(0).toUpperCase() + language.substring(1) + ' ' +
+  //   totalWordCount + ' word Bip39 phrase'
+  // ))
+  // div.appendChild(createEl('br'))
+  // div.appendChild(createEl('br'))
+
+  const tbl = document.createElement('table');
+
+  const tbdy = document.createElement('tbody');
+
+  let tr, appendTd = el => appendTrTd(tr, el)
+
+  var leftCount = 1, rightCount = Math.ceil(totalWordCount / 2) + 1
+
+  // 2 column table (one iteration 2 words)
+  for (var i = 0; i < Math.ceil(totalWordCount / 2); i++) {
+    tr = document.createElement('tr')
+
+    var id = leftCount++
+    appendTd(createEl('small', id))
+    let wrd = createEl('div', words[id - 1])
+    // let wrd = document.createElement('input')
+    // wrd.value = words[id - 1]
+    // wrd.setAttribute('readonly', 'true')
+    wrd.className += ' mnemonic-word'
+    appendTd(wrd)
+
+    id = rightCount++
+    if(words.length >= id) {
+      appendTd(createEl('small', id))
+      wrd = createEl('div', words[id - 1])
+      // wrd = document.createElement('input')
+      // wrd.value = words[id - 1]
+      // wrd.setAttribute('readonly', 'true')
+      wrd.className += 'mnemonic-word'
+      appendTd(wrd)
+    }
+    tbdy.appendChild(tr);
+  }
+  tbl.appendChild(tbdy);
+  div.appendChild(tbl);
+
+  const fullPhrase = createEl('div', phrase)
+  fullPhrase.id = 'fullPhrase'
+  fullPhrase.className += 'CopyText'
+  fullPhrase.onclick = function() {
+    if (document.selection) { // Non-standard
+        var range = document.body.createTextRange();
+        range.moveToElementText(document.getElementById('fullPhrase'));
+        range.select();
+    } else if (window.getSelection) {
+        var range = document.createRange();
+        range.selectNode(document.getElementById('fullPhrase'));
+        window.getSelection().removeAllRanges();
+        window.getSelection().addRange(range);
+    }
+  }
+
+  div.appendChild(createEl('p', fullPhrase))
+  div.appendChild(createEl('i', new Date().toDateString()))
+
+  return div
+}
+</script>
+</head>
+
+<body>
+  <h1><a id="start"></a>BIP39 Mnemonic Phrase</h1>
+
+  <script>
+  function onLoad(lang = 'english', wordCount = 24) {
+    init(lang, wordCount)
+
+    const parentChooser = document.getElementById('mnemonicPhraseChooser')
+    while(parentChooser.firstChild !== null) {
+      parentChooser.removeChild(parentChooser.firstChild)
+    }
+
+    const parentTable = document.getElementById('mnemonicPhraseTable')
+    while(parentTable.firstChild !== null) {
+      parentTable.removeChild(parentTable.firstChild)
+    }
+
+    const child = createChooserTable()
+    parentChooser.appendChild(child)
+
+    document.getElementById('Word1').focus()
+  }
+  </script>
+
+  <form onLoad="onSubmitSettings(); return false" id="settingsForm">
+    <script>
+    function onSubmitSettings() {
+      try {
+        const lang = document.getElementById('language')
+        const wordCount = document.getElementById('wordCount')
+        onLoad(lang.value, Number(wordCount.value))
+
+        const settingsForm = document.getElementById('settingsForm')
+        while(settingsForm.firstChild !== null) {
+          settingsForm.removeChild(settingsForm.firstChild)
+        }
+
+        document.getElementById('greetings').style = 'display: none';
+        document.getElementById('instructions').style = 'display: block';
+      } catch(e){
+        console.error(e)
+      }
+    }
+    </script>
+
+    <table>
+      <tbody>
+        <tr>
+          <td>
+            <label for="language">Language</label>
+          </td>
+          <td>
+            <select id="language">
+              <option value="spanish">Spanish</option>
+              <option value="korean">Korean</option>
+              <option value="japanese">Japanese</option>
+              <option value="italian">Italian</option>
+              <option value="french">French</option>
+              <option value="english" selected>English</option>
+              <option value="chinese_traditional">Chinese Traditional</option>
+              <option value="chinese_simplified">Chinese Simplified</option>
+            </select>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <label for="language">Word Count</label>
+          </td>
+          <td>
+            <select id="wordCount">
+              <option value="12">12</option>
+              <option value="15">15</option>
+              <option value="18">18</option>
+              <option value="21">21</option>
+              <option value="24" selected>24</option>
+            </select>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>
+      <button onClick="onSubmitSettings(true); return false">✔</button>
+      <small>Get Started</small>
+    </p>
+  </form>
+
+  <form onSubmit="onSubmitPhrase(); return false">
+    <script>
+    function onSubmitPhrase(e) {
+      // catch all errors to prevent form submit of sensitive information
+      try {
+        const mnemonic = createValidMnemonic()
+        if(!bip39.validateMnemonic(mnemonic, bip39.wordlists[language])) {
+          throw new Error('invalid mnemonic')
+        }
+
+        function componentWillUpdate() {
+          // remove prior screen
+          const parentChooser = document.getElementById('mnemonicPhraseChooser');
+          while(parentChooser.firstChild !== null) {
+            parentChooser.removeChild(parentChooser.firstChild);
+          }
+
+          document.getElementById('instructions').style = 'display: none'
+
+        }
+
+        const parentDisplay = document.getElementById('mnemonicPhraseTable');
+        const childDisplay = createPhraseDisplay(mnemonic)
+        componentWillUpdate()
+        parentDisplay.appendChild(childDisplay)
+
+      } catch(e){
+        console.error(e)
+      }
+    }
+    </script>
+    <div id="mnemonicPhraseChooser"></div>
+  </form>
+
+  <div id="mnemonicPhraseTable"></div>
+
+  <div id="greetings">
+    <h1>Greetings!</h1>
+
+    <p>This page can generate a secure random mnemonic phrase that you may then
+      personally modify.  Your personal word selections help you to ensure that
+      the phrase truly is random.  This page calculates the last word
+      programmatically so you'll have a valid Bip39 phrase.
+    </p>
+
+    <p>Although the initial phrase is very random and very strong, adjusting
+      each word gives benefits:
+    </p>
+    <ul>
+      <li>Generating the phrase here allows you to preform a mnemonic phrase
+        restore on your chosen device or software prior to using.
+      </li>
+      <li>Choosing a mnemonic phrase yourself helps protect against a flawed
+        or malicious random number generator.</li>
+    </ul>
+
+    <p>Additional precautions should be taken with this process to help
+      achieve more hardware wallet-like security.  The idea is to protect
+      against a root kit screen capture program.
+    </p>
+
+    <h1>About the Mnemonic Phrase</h1>
+    <p>
+      The <a href="https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki">BIP39 Mnemonic phrase</a>
+      is a widely used standard for encoding a private seed used to access private
+      keys on various blockchains or cryptographic networks.
+
+      The Mnemonic phrase makes a good user-managed private key because it provides:
+      <ul>
+        <li>Words that are not simular</li>
+        <li>Self checking, you can be warned if any word is out of place</li>
+        <li>A short dictionary for spellchecking or auto-complete</li>
+      </ul>
+    </p>
+
+    <h1>Checksum</h1>
+
+    <p>The last word is chosen by an algorithm designed to validate the
+    entire phrase.</p>
+
+    <h1>Deterministic Phrases</h1>
+    <p>Accepting a generated mnemonic phrase is a bad idea if the random
+      number generator can not be fully audited and understood.  A bug or
+      exploit in the random number generator could allow a 3rd party to
+      calculate all private mnemonic phrases created by the the device or
+      code in question.  This is a hard to detect remote attack.  Detection
+      of this attack may require reverse engineering code, analyzing
+      micro-chip circuitry, or observing that other users are get hacked.
+    </p>
+
+    <h1>Get Started</h1>
+
+    <p>Click on the Get Started button <a href="#start">above</a>.</p>
+
+  </div>
+
+  <div id="instructions" style="display: none">
+    <h1>Tips</h1>
+    <ul>
+      <li>Use without an Internet connection</li>
+      <li>Practice on-line first (refresh the page to restart)</li>
+      <li>Use a Private Browsing Window (this disables plug-ins and storage).  Your browser may call this feature:</li>
+      <ul>
+        <li>Private Tab</li>
+        <li>New Private Window</li>
+        <li>New Incognito Window</li>
+      </ul>
+      <li>Change each drop-downs to a new random location (make it random).</li>
+      <li>In the drop-down, the words should be in alphabetical order but each list should start in a random position.</li>
+      <li>Observe the final words chosen then click on the submit button (check icon).  The next view should keep all prior chosen words and add one additional word as the last word in the phrase.</li>
+      <li>Carefully backup the phrase.  For the written backup, write on a hard-surface.</li>
+      <li>Use the new phrase in the desired tool like a hardware wallet to restore the phrase.</li>
+      <li>Secure your Hardware (<a href="https://steemit.com/trezor/@furion/build-yourself-a-trezor">guide</a>) – Perform as many of these as possible to match your desired level of security.</li>
+      <ul>
+        <li>For cold-storage use the browser's <u>Save page as..</u> feature to make this tool available off-line.  Refresh before you save the page.</li>
+        <li>Boot from a secure read-only Linux Distro (live CD, USB, or USB with a read-only lock).</li>
+        <li>Disconnect the Internet access (wifi, lifi, Ethernet cable, etc).</li>
+        <li>Remove storage media like USBs, hard-drive, or solid state drives.</li>
+      </ul>
+    </ul>
+
+    <h1>About the drop-downs</h1>
+    <ul>
+      <li>Each drop down contains the same 2048 words.</li>
+      <li>Drop downs are positioned randomly using a secure random number generator.</li>
+      <li>Drop downs are only created if a secure random number generator is available.</li>
+      <li>They may be slow but you don't have to do this often.</li>
+    </ul>
+  </div>
+
+  <hr/>
+  License: <a href="http://unlicense.org">unlicense</a> | Author: jamesc | Contact: <u>@slim2k</u> keybase, <u>@slim180</u> telegram, <a href="https://github.com/jcalfee">jcalfee</a> github
+</body>
+</html>
