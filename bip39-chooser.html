@@ -120,7 +120,7 @@ function createChooserTable() {
       btn.appendChild(document.createTextNode('✔'))
       span.appendChild(btn)
 
-      const lbl = createEl('label', 'Finished!')
+      const lbl = createEl('label', 'I\'m Finished!')
       lbl.setAttribute('for', 'submitPhrase')
       span.appendChild(createEl('span', ' '))
       span.appendChild(createEl('small', lbl))
@@ -342,12 +342,12 @@ function createPhraseDisplay(phrase, element) {
               <td>
                 <div class="input-field col s12">
                   <select id="language">
+                    <option value="english" selected>English</option>
                     <option value="spanish">Spanish</option>
                     <option value="korean">Korean</option>
                     <option value="japanese">Japanese</option>
                     <option value="italian">Italian</option>
                     <option value="french">French</option>
-                    <option value="english" selected>English</option>
                     <option value="chinese_traditional">Chinese Traditional</option>
                     <option value="chinese_simplified">Chinese Simplified</option>
                   </select>
@@ -360,11 +360,11 @@ function createPhraseDisplay(phrase, element) {
               </td>
               <td>
                 <select id="wordCount">
-                  <option value="12">12</option>
-                  <option value="15">15</option>
-                  <option value="18">18</option>
-                  <option value="21">21</option>
                   <option value="24" selected>24</option>
+                  <option value="21">21</option>
+                  <option value="18">18</option>
+                  <option value="15">15</option>
+                  <option value="12">12</option>
                 </select>
               </td>
             </tr>
