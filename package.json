@@ -20,6 +20,7 @@
     "safe-buffer": "^5.1.2"
   },
   "devDependencies": {
-    "browserify": "^16.2.3"
+    "browserify": "^16.2.3",
+    "cached-path-relative": ">=1.0.2"
   }
 }
