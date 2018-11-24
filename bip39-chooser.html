@@ -377,6 +377,38 @@ function createPhraseDisplay(phrase, element) {
         </p>
       </form>
 
+      <h4>Validate Phrase</h4>
+
+      <form onSubmit="return false" id="validateForm">
+        <script>
+        let timer
+        function onValidate() {
+          clearTimeout(timer)
+          const validateAnswer = document.getElementById('validateAnswer')
+          validateAnswer.innerHTML = '&nbsp;'
+          timer = setTimeout(function () {
+            try {
+              const phrase = document.getElementById('validatePhrase')
+              if(phrase.value.split(' ').length >= 12) {
+                const isValid = bip39.validateMnemonic(phrase.value)
+
+                const validateAnswer = document.getElementById('validateAnswer')
+                validateAnswer.innerHTML = isValid ?
+                  '<div style="color: green">✓</div>' :
+                  '<div style="color: darkred">☠</div>'
+              }
+            } catch(e){
+              console.error(e)
+            }
+          }, 200)
+        }
+        </script>
+        <input type="password" id="validatePhrase"
+          placeholder="Paste Bip39 Mnemonic Phrase to check it"
+          onpaste="onValidate()" onkeydown="onValidate()" style="width: 100%" />
+        <h5><div id="validateAnswer"/>&nbsp;</h5>
+      </form>
+
       <h2>About the Mnemonic Phrase</h2>
       <p>
         The <a href="https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki">BIP39 Mnemonic phrase</a>
