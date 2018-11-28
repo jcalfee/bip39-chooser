@@ -9,12 +9,14 @@
     "bip39": "browserify -o ./lib/bip39.js -s bip39 -r bip39",
     "createHash": "browserify -o ./lib/createHash.js -s createHash -r create-hash",
     "saveBuffer": "browserify -o ./lib/safeBuffer.js -s safeBuffer -r safe-buffer",
-    "build": "npm run randomBytes && npm run bip39 && npm run createHash && npm run saveBuffer"
+    "bip39Checker": "browserify -o ./lib/bip39Checker.js -s bip39Checker -r bip39-checker",
+    "build": "npm run randomBytes && npm run bip39 && npm run createHash && npm run saveBuffer && npm run bip39Checker"
   },
   "author": "jamesc",
   "license": "MIT",
   "dependencies": {
     "bip39": "^2.5.0",
+    "bip39-checker": "^1.1.7",
     "create-hash": "^1.2.0",
     "randombytes": "^2.0.6",
     "safe-buffer": "^5.1.2"

@@ -13,6 +13,8 @@
 <script src="lib/bip39.js"></script>
 <script src="lib/createHash.js"></script>
 <script src="lib/safeBuffer.js"></script>
+<script src="lib/bip39Checker.js"></script>
+
 <script>var Buffer = safeBuffer.Buffer</script>
 
 <script>
@@ -200,7 +202,7 @@ function createPhraseDisplay(phrase, element) {
   tbl.appendChild(tbdy);
   div.appendChild(tbl);
 
-  const fullPhrase = createEl('div', phrase)
+  const fullPhrase = createEl('span', phrase)
   fullPhrase.id = 'fullPhrase'
   fullPhrase.className = 'CopyText row'
   fullPhrase.onclick = function() {
@@ -377,7 +379,7 @@ function createPhraseDisplay(phrase, element) {
         </p>
       </form>
 
-      <h4>Validate Phrase</h4>
+      <h4>Check Phrase</h4>
 
       <form onSubmit="return false" id="validateForm">
         <script>
@@ -385,28 +387,52 @@ function createPhraseDisplay(phrase, element) {
         function onValidate() {
           clearTimeout(timer)
           const validateAnswer = document.getElementById('validateAnswer')
-          validateAnswer.innerHTML = '&nbsp;'
+          if(!/Invalid word count/.test(validateAnswer.innerHTML)) {
+            validateAnswer.innerHTML = '&nbsp;'
+          }
+
           timer = setTimeout(function () {
             try {
               const phrase = document.getElementById('validatePhrase')
-              if(phrase.value.split(' ').length >= 12) {
-                const isValid = bip39.validateMnemonic(phrase.value)
+              const words = phrase.value.split(' ')
+              let suggestionText = [], isValid = false
 
-                const validateAnswer = document.getElementById('validateAnswer')
-                validateAnswer.innerHTML = isValid ?
-                  '<div style="color: green">✓</div>' :
-                  '<div style="color: darkred">☠</div>'
+              if([12, 15, 18, 21, 24].indexOf(words.length) === -1) {
+                suggestionText.push('Invalid word count')
+              } else {
+                const language = document.getElementById('language').value
+                isValid = bip39.validateMnemonic(phrase.value, bip39.wordlists[language])
+                if(!isValid) {
+                  for(let i = 0; i < words.length; i++) {
+                    const word = words[i]
+                    const suggestions = bip39Checker.suggest(word, {language})
+                    if(Array.isArray(suggestions) && suggestions.length > 0) {
+                      suggestionText.push(`Word ${i + 1} suggestions: ${suggestions.slice(0, 4).join(', ')}`)
+                      break
+                    }
+                  }
+                  if(bip39Checker.normalize(phrase.value) !== phrase.value) {
+                    suggestionText.push('Invalid: characters or extraneous spaces or case')
+                  }
+                }
               }
+
+              const validateAnswer = document.getElementById('validateAnswer')
+              validateAnswer.innerHTML = isValid ?
+                '<div style="color: green">✓ Valid</div>' :
+                `<div style="color: darkred">${suggestionText.length ? ' ' : '&nbsp;'}${suggestionText.join(', ')}</div>`
+
             } catch(e){
               console.error(e)
             }
           }, 200)
         }
         </script>
-        <input type="text" id="validatePhrase"
-          placeholder="Paste Bip39 Mnemonic Phrase to check it"
-          onpaste="onValidate()" onkeydown="onValidate()" style="width: 100%" />
         <h5><div id="validateAnswer"/>&nbsp;</h5>
+        <textarea id="validatePhrase"
+          placeholder="Paste Bip39 Mnemonic Phrase to check it" autocomplete="off"
+          onpaste="onValidate()" onkeydown="onValidate()"
+          rows="3" cols="50" __style="width: 100%"></textarea>
       </form>
 
       <h2>About the Mnemonic Phrase</h2>
