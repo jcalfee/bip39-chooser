@@ -394,7 +394,7 @@ function createPhraseDisplay(phrase, element) {
           timer = setTimeout(function () {
             try {
               const phrase = document.getElementById('validatePhrase')
-              const words = phrase.value.split(' ')
+              const words = phrase.value.trim().split(/ +/)
               let suggestionText = [], isValid = false
 
               if([12, 15, 18, 21, 24].indexOf(words.length) === -1) {
