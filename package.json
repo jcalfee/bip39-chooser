@@ -6,11 +6,9 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "randomBytes": "browserify -o ./lib/randomBytes.js -s randomBytes -r randombytes",
-    "bip39": "browserify -o ./lib/bip39.js -s bip39 -r bip39",
-    "createHash": "browserify -o ./lib/createHash.js -s createHash -r create-hash",
-    "saveBuffer": "browserify -o ./lib/safeBuffer.js -s safeBuffer -r safe-buffer",
-    "bip39Checker": "browserify -o ./lib/bip39Checker.js -s bip39Checker -r bip39-checker",
-    "build": "npm run randomBytes && npm run bip39 && npm run createHash && npm run saveBuffer && npm run bip39Checker"
+    "coinExports": "browserify ./src/coin-exports.js -o ./lib/coinExports.js -s coinExports",
+    "QRious": "browserify -o ./lib/QRious.js -s QRious -r qrious",
+    "build": "npm run coinExports && npm run randomBytes && npm run QRious"
   },
   "author": "jamesc",
   "license": "MIT",
@@ -18,6 +16,8 @@
     "bip39": "^2.5.0",
     "bip39-checker": "^1.1.7",
     "create-hash": "^1.2.0",
+    "hdkey": "^1.1.0",
+    "qrious": "^4.0.2",
     "randombytes": "^2.0.6",
     "safe-buffer": "^5.1.2"
   },

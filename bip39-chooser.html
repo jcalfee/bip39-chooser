@@ -7,15 +7,19 @@
 <meta name="description" content="BIP39 creator / chooser">
 <title>Private Key Phrase Chooser (BIP39)</title>
 
-<link href="bip39-chooser.css" rel="stylesheet" type="text/css"/>
+<link href="src/bip39-chooser.css" rel="stylesheet" type="text/css"/>
 
+<script src="lib/coinExports.js"></script>
+<script src="lib/QRious.js"></script><!-- qr -->
 <script src="lib/randomBytes.js"></script>
-<script src="lib/bip39.js"></script>
-<script src="lib/createHash.js"></script>
-<script src="lib/safeBuffer.js"></script>
-<script src="lib/bip39Checker.js"></script>
 
-<script>var Buffer = safeBuffer.Buffer</script>
+<script>var bip39Checker = coinExports.bip39Checker</script>
+<script>var bip39 = bip39Checker.bip39</script>
+<script>var Buffer = coinExports.safeBuffer.Buffer</script>
+<script>var createHash = coinExports.createHash</script>
+<script>var HDKey = coinExports.HDKey</script>
+<script>var secp256k1 = coinExports.secp256k1</script>
+<script>var base58 = coinExports.base58</script>
 
 <script>
 const checkSumWordCount = 1
@@ -122,7 +126,7 @@ function createChooserTable() {
       btn.appendChild(document.createTextNode('✔'))
       span.appendChild(btn)
 
-      const lbl = createEl('label', 'I\'m Finished!')
+      const lbl = createEl('label', 'I\'m Finished!') // onSubmitPhrase
       lbl.setAttribute('for', 'submitPhrase')
       span.appendChild(createEl('span', ' '))
       span.appendChild(createEl('small', lbl))
@@ -170,12 +174,39 @@ function createValidMnemonic() {
 </script>
 
 <script>
+function onclickSelect(id) {
+  return function() {
+    if (document.selection) { // Non-standard
+      var range = document.body.createTextRange();
+      range.moveToElementText(document.getElementById(id));
+      range.select();
+    } else if (window.getSelection) {
+      var range = document.createRange();
+      range.selectNode(document.getElementById(id));
+      window.getSelection().removeAllRanges();
+      window.getSelection().addRange(range);
+    }
+  }
+}
+
+// Phrase Display
+function clearPhraseDisplay() {
+  const phraseDisplay = document.getElementById('phraseDisplay')
+  if(phraseDisplay) {
+    while(phraseDisplay.firstChild !== null) {
+      phraseDisplay.removeChild(phraseDisplay.firstChild)
+    }
+  }
+}
+
+// Phrase Display
 function createPhraseDisplay(phrase, element) {
   const words = phrase.split(' ')
   const div = document.createElement('div');
+  div.id = 'phraseDisplay'
   const tbl = document.createElement('table');
   const tbdy = document.createElement('tbody');
-
+  tbl.className = 'row'
   let tr, appendTd = el => appendTrTd(tr, el)
 
   var leftCount = 1, rightCount = Math.ceil(totalWordCount / 2) + 1
@@ -205,41 +236,63 @@ function createPhraseDisplay(phrase, element) {
   const fullPhrase = createEl('span', phrase)
   fullPhrase.id = 'fullPhrase'
   fullPhrase.className = 'CopyText row'
-  fullPhrase.onclick = function() {
-    if (document.selection) { // Non-standard
-        var range = document.body.createTextRange();
-        range.moveToElementText(document.getElementById('fullPhrase'));
-        range.select();
-    } else if (window.getSelection) {
-        var range = document.createRange();
-        range.selectNode(document.getElementById('fullPhrase'));
-        window.getSelection().removeAllRanges();
-        window.getSelection().addRange(range);
-    }
-  }
+  fullPhrase.onclick = onclickSelect('fullPhrase')
 
   div.appendChild(createEl('p', fullPhrase))
-  div.appendChild(createEl('i', new Date().toDateString()))
 
   return div
 }
+function resetState(initial = false) {
+  if(initial) {
+    document.getElementById('greetings').style = 'display: block'
+    document.getElementById('settingsForm').style = 'display: block'
+    document.getElementById('greetingsInfo').style = 'display: none'
+  } else {
+    document.getElementById('greetings').style = 'display: none'
+  }
+  document.getElementById('instructions').style = 'display: none'
+}
+
+const historyPopState = []
+// history
+function historyPush(state = undefined, title = "", url = "", popCallback) {
+  if(window && window['history'] !== undefined) {
+    if(popCallback) {
+      historyPopState.push(popCallback)
+    }
+    history.pushState(state, title, url)
+  }
+}
+// history
+if(window) {
+  window.onpopstate = function() {
+    const fn = historyPopState.pop()
+    if(fn) {
+      fn()
+    }
+  }
+}
+
 </script>
+
 </head>
 
 <body>
   <header class="container">
-    <h2>BIP39 Mnemonic Phrase</h2>
+    <h3>BIP39 Mnemonic Key</h3>
   </header>
   <main class="container">
     <script>
     function onLoad(lang = 'english', wordCount = 24) {
       init(lang, wordCount)
 
+      // clearChooserTable
       const parentChooser = document.getElementById('mnemonicPhraseChooser')
       while(parentChooser.firstChild !== null) {
         parentChooser.removeChild(parentChooser.firstChild)
       }
 
+      // clearChooserTable
       const parentTable = document.getElementById('mnemonicPhraseTable')
       while(parentTable.firstChild !== null) {
         parentTable.removeChild(parentTable.firstChild)
@@ -254,6 +307,14 @@ function createPhraseDisplay(phrase, element) {
 
     <form onSubmit="onSubmitPhrase(); return false">
       <script>
+      function clearPhraseChooser() {
+        // remove prior screen
+        const parentChooser = document.getElementById('mnemonicPhraseChooser');
+        while(parentChooser.firstChild !== null) {
+          parentChooser.removeChild(parentChooser.firstChild);
+        }
+      }
+
       function onSubmitPhrase(e) {
         // catch all errors to prevent form submit of sensitive information
         try {
@@ -262,21 +323,20 @@ function createPhraseDisplay(phrase, element) {
             throw new Error('invalid mnemonic')
           }
 
-          function componentWillUpdate() {
-            // remove prior screen
-            const parentChooser = document.getElementById('mnemonicPhraseChooser');
-            while(parentChooser.firstChild !== null) {
-              parentChooser.removeChild(parentChooser.firstChild);
-            }
-
-            document.getElementById('instructions').style = 'display: none'
-          }
-
           const parentDisplay = document.getElementById('mnemonicPhraseTable');
           const childDisplay = createPhraseDisplay(mnemonic)
-          componentWillUpdate()
-          parentDisplay.appendChild(childDisplay)
 
+          const backupMsg = createEl('h5', 'This is your Backup, keep it secret.')
+          backupMsg.style = 'color: lightcoral'
+          childDisplay.appendChild(backupMsg)
+
+          // remove prior screen
+          clearPhraseChooser()
+
+          // remove prior screen
+          document.getElementById('instructions').style = 'display: none'
+
+          parentDisplay.appendChild(childDisplay)
         } catch(e){
           console.error(e)
         }
@@ -288,33 +348,10 @@ function createPhraseDisplay(phrase, element) {
     <div id="mnemonicPhraseTable"></div>
 
     <div id="greetings">
-      <h4>Greetings!</h4>
+      <br/><hr />
+      <h4>New Phrase</h4>
 
-      <p>This page can generate a secure random mnemonic phrase that you may then
-        personally modify.  Your personal word selections help you to ensure that
-        the phrase truly is random.  This page calculates the last word
-        programmatically so you'll have a valid Bip39 phrase.
-      </p>
-
-      <p>Although the initial phrase is very random and very strong, adjusting
-        each word gives benefits:
-      </p>
-      <ul>
-        <li>Generating the phrase here allows you to preform a mnemonic phrase
-          restore on your chosen device or software prior to using.
-        </li>
-        <li>Choosing a mnemonic phrase yourself helps protect against a flawed
-          or malicious random number generator.</li>
-      </ul>
-
-      <p>Additional precautions should be taken with this process to help
-        achieve more hardware wallet-like security.  The idea is to protect
-        against a root kit screen capture program.
-      </p>
-
-      <h4>Get Started</h4>
-
-      <form onLoad="onSubmitSettings(); return false" id="settingsForm">
+      <form onSubmit="onSubmitSettings(); return false" id="settingsForm">
         <script>
         function onSubmitSettings() {
           try {
@@ -322,16 +359,32 @@ function createPhraseDisplay(phrase, element) {
             const wordCount = document.getElementById('wordCount')
             onLoad(lang.value, Number(wordCount.value))
 
-            const settingsForm = document.getElementById('settingsForm')
-            while(settingsForm.firstChild !== null) {
-              settingsForm.removeChild(settingsForm.firstChild)
-            }
+            document.getElementById('settingsForm').style = 'display: none'
 
-            document.getElementById('greetings').style = 'display: none';
+            resetState()
             document.getElementById('instructions').style = 'display: block';
+            historyPush(undefined, 'New Phrase', null, function() {
+              resetState(true)
+              clearPhraseChooser()
+              const phraseEl = document.getElementById('fullPhrase')
+              if(phraseEl && phraseEl.innerText) {
+                const phrase = phraseEl.innerText
+                const validatePhraseEl = document.getElementById('validatePhrase')
+                validatePhraseEl.innerText = phrase
+                onValidatePhrase()
+              }
+              clearPhraseDisplay()
+            })
           } catch(e){
             console.error(e)
           }
+        }
+        function toggleDisplay(id) {
+          var e = document.getElementById(id);
+          if(e.style.display == 'block')
+            e.style.display = 'none';
+          else
+            e.style.display = 'block';
         }
         </script>
 
@@ -362,29 +415,61 @@ function createPhraseDisplay(phrase, element) {
               </td>
               <td>
                 <select id="wordCount">
-                  <option value="24" selected>24</option>
-                  <option value="21">21</option>
-                  <option value="18">18</option>
+                  <option value="12" selected>12</option>
                   <option value="15">15</option>
-                  <option value="12">12</option>
+                  <option value="18">18</option>
+                  <option value="21">21</option>
+                  <option value="24">24</option>
                 </select>
               </td>
             </tr>
           </tbody>
         </table>
 
-        <p>
-          <button id="submitSettings" onClick="onSubmitSettings(true); return false">✔</button>
-          <small><label for="submitSettings">Get Started</label></small>
-        </p>
+        <br/>
+        <button id="submitSettings" onClick="onSubmitSettings(true); return false">✔</button>
+        <small><label for="submitSettings">Choose</label></small>
+        <span style="float: right">
+          <a onclick="toggleDisplay('greetingsInfo')" title="Greetings!" id="greetingsMore">[?]</a>
+            <!-- <img src="https://www.freeiconspng.com/uploads/info-icon-10.png" style="width: 30px"> -->
+          </a>
+        </span>
       </form>
 
-      <h4>Check Phrase</h4>
+      <div id="greetingsInfo" style="display: none">
+        <h5>For Additional Security</h5>
+        <ul>
+          <li>Turn off the Internet connection while creating your phrase.</li>
+          <li>Open this page in a Private Browsing Window.  Private Browsing will disable web plug-ins storage (also called: Private Tab, New Private Window, New Incognito Window).</li>
+          <li>For cold-storage use the browser's <u>Save page as..</u> feature (remember to refresh the page first).</li>
+          <li>Practice on-line (use Back back button)</li>
+        </ul>
 
+        <h5>About</h5>
+        <p>New Phrase generates a secure random mnemonic phrase that you may then
+          personally modify.  Your personal word selections help you to ensure that
+          the phrase truly is random.  This page calculates the last word
+          programmatically so you'll have a valid Bip39 phrase.
+        </p>
+
+        <p>Although the initial phrase is very random and very strong, adjusting
+          each word gives benefits:
+        </p>
+        <ul>
+          <li>Generating the phrase here allows you to preform a mnemonic phrase
+            restore on your chosen device or software prior to using.
+          </li>
+          <li>Choosing a mnemonic phrase yourself helps protect against a flawed
+            or malicious random number generator.</li>
+          </ul>
+      </div>
+
+      <br/><hr />
+      <h4>Existing Phrase</h4>
       <form onSubmit="return false" id="validateForm">
         <script>
         let timer
-        function onValidate() {
+        function onValidatePhrase() {
           clearTimeout(timer)
           const validateAnswer = document.getElementById('validateAnswer')
           if(!/Invalid word count/.test(validateAnswer.innerHTML)) {
@@ -414,6 +499,9 @@ function createPhraseDisplay(phrase, element) {
                   if(bip39Checker.normalize(phrase.value) !== phrase.value) {
                     suggestionText.push('Invalid: characters or extraneous spaces or case')
                   }
+                  if(suggestionText.length === 0) {
+                    suggestionText.push('Out of place word or words')
+                  }
                 }
               }
 
@@ -422,18 +510,38 @@ function createPhraseDisplay(phrase, element) {
                 '<div style="color: green">✓ Valid</div>' :
                 `<div style="color: darkred">${suggestionText.length ? ' ' : '&nbsp;'}${suggestionText.join(', ')}</div>`
 
+              const validatePhraseUnlock = document.getElementById('validatePhraseUnlock')
+              validatePhraseUnlock.disabled = !isValid
+
             } catch(e){
               console.error(e)
             }
           }, 200)
         }
+        function onValidatePhraseUnlock() {
+          resetState()
+          const phrase = document.getElementById('validatePhrase').value.trim()
+          const passphrase = document.getElementById('passphrase')
+          showBip32(phrase, passphrase ? passphrase.value.trim() : undefined)
+          historyPush(undefined, 'Existing Phrase', null, function() {
+            resetState(true)
+            clearBip32(phrase)
+          })
+        }
         </script>
         <h5><div id="validateAnswer"/>&nbsp;</h5>
         <textarea id="validatePhrase"
           placeholder="Paste Bip39 Mnemonic Phrase to check it" autocomplete="off"
-          onpaste="onValidate()" onkeydown="onValidate()"
+          onpaste="onValidatePhrase()" onkeydown="onValidatePhrase()"
           rows="3" cols="50" __style="width: 100%"></textarea>
+        <br/>
+        <div>
+          <button id="validatePhraseUnlock" disabled onclick="onValidatePhraseUnlock()">Unlock</button>
+          <input type="text" id="passphrase" placeholder="Passphrase (optional)" autocomplete="off"/>
+        </div>
       </form>
+
+      <br/>
 
       <h2>About the Mnemonic Phrase</h2>
       <p>
@@ -466,28 +574,24 @@ function createPhraseDisplay(phrase, element) {
     </div>
 
     <div id="instructions" style="display: none">
-      <h2>Security Tips</h2>
+      <h4>Instructions</h4>
       <ul>
-        <li>Practice on-line first (refresh the page to restart)</li>
-        <li>Turn off the Internet connection while creating your phrase.</li>
-        <li>Open this page in a Private Browsing Window.  The browser will disable web plug-ins and disable or discard web storage when your down.  Your browser may call this feature: Private Tab, New Private Window, New Incognito Window, etc..</li>
-        <li>Change each drop-downs to a new random location (make it random).</li>
-        <li>In the drop-down, the words should be in alphabetical order but each list should start in a random position.</li>
-        <li>Observe the final words chosen then click on the submit button (check icon).  The next view should keep all prior chosen words and add one additional word as the last word in the phrase.</li>
+        <li>Change each drop-down to a new word (make it random).</li>
+        <li>In the drop-down, the words should be in alphabetical order but each
+          list should start in a random position.</li>
+        <li>Observe the final words chosen then click on the submit button (check
+          icon).  The next view should keep all your prior chosen words and add
+          one additional word as the last word in the phrase.</li>
         <li>Carefully backup the phrase.  For the written backup, write on a hard-surface.</li>
         <li>Use the new phrase soon in the desired tool like a hardware wallet to restore the phrase.</li>
       </ul>
 
       <h4>Secure your Hardware (<a href="https://steemit.com/trezor/@furion/build-yourself-a-trezor">guide</a>)</h4>
-      <p>Perform some or all of the following depending on your desired level of security.</p>
+      <p>Perform some of the following depending on your desired level of security.</p>
       <ul>
-        <li>For cold-storage use the browser's <u>Save page as..</u> feature to make this tool available off-line.  Refresh before you save the page.</li>
-        <li>Boot from a secure read-only Linux Distro (live CD, USB, or USB with a read-only lock).</li>
-        <li>Disconnect the Internet access (wifi, lifi, Ethernet cable, etc).</li>
-        <li>Remove storage media like USBs, hard-drive, or solid state drives.</li>
       </ul>
 
-      <h2>About the drop-downs</h2>
+      <h4>About the drop-downs</h4>
       <ul>
         <li>Each drop down contains the same 2048 words.</li>
         <li>Drop downs are positioned randomly using a secure random number generator.</li>
@@ -495,10 +599,167 @@ function createPhraseDisplay(phrase, element) {
         <li>They may be slow but you don't have to do this often.</li>
       </ul>
     </div>
+
+    <div id="showBip32" style="display: none">
+      <script>
+      /**
+        @arg {Buffer} keyBuffer data
+        @arg {string} keyType = sha256x2, K1, etc
+        @return {string} checksum encoded base58 string
+      */
+      function checkEncode(keyBuffer, keyType = null) {
+        if(!Buffer.isBuffer(keyBuffer))
+          throw new Error('expecting keyBuffer<Buffer>')
+
+        if(keyType === 'sha256x2') { // legacy
+          const checksum = createHash('sha256').update(
+            createHash('sha256').update(keyBuffer).digest()
+          ).digest().slice(0, 4)
+
+          return base58.encode(Buffer.concat([keyBuffer, checksum]))
+        } else {
+          const check = [keyBuffer]
+          if(keyType) {
+              check.push(Buffer.from(keyType))
+          }
+          const checksum = createHash('ripemd160').update(Buffer.concat(check)).digest().slice(0, 4)
+          return base58.encode(Buffer.concat([keyBuffer, checksum]))
+        }
+      }
+
+      // Unlock
+      function clearBip32() {
+        document.getElementById('showBip32').style = 'display: none';
+        document.getElementById('showBip32Phrase').innerHTML = undefined;
+        document.getElementById('publicKeyCanvas1').innerHTML = undefined;
+        document.getElementById('publicKeyCanvas').innerHTML = undefined;
+        document.getElementById('privateKeyCanvas').innerHTML = undefined;
+        document.getElementById("publicKey1").textContent = undefined
+        document.getElementById("publicKey").textContent = undefined
+        document.getElementById("privateKey").textContent = undefined
+      }
+
+      // Unlock
+      function showBip32(mnemonic, passphrase = '') {
+        document.getElementById('showBip32').style = 'display: block';
+        document.getElementById('showBip32Phrase').onclick = onclickSelect('showBip32Phrase');
+        document.getElementById('showBip32Phrase').innerText = mnemonic;
+
+        // EOS 194 https://github.com/satoshilabs/slips/blob/master/slip-0044.md
+        // m/44'/194'/0'/0/0 https://github.com/tarassh/eos-ledger/blob/ec34ea2be018937085da7ac7fae9f3a360178ef9/getPublicKey.py#L46
+        const hdkey = HDKey.fromMasterSeed(bip39.mnemonicToSeed(mnemonic, passphrase))
+        const eosPath = hdkey.derive("m/44'/194'/0'/0/0")
+
+        function toWif(privateKey) {
+          var privateKey = Buffer.from(privateKey)
+          // checksum includes the version
+          privateKey = Buffer.concat([new Buffer([0x80]), privateKey]);
+          return checkEncode(privateKey, 'sha256x2')
+        }
+
+        const privateWif = toWif(eosPath.privateKey, 0x80)
+        const pubkey = 'EOS' + checkEncode(Buffer.from(eosPath.publicKey))
+
+        document.getElementById('publicKey1').textContent = pubkey;
+        document.getElementById('publicKey').textContent = pubkey;
+        new QRious({
+          element: document.getElementById('publicKeyCanvas1'),
+          value: pubkey,
+          size: 150
+        });
+
+        new QRious({
+          element: document.getElementById('publicKeyCanvas'),
+          value: pubkey,
+          size: 150
+        });
+
+        document.getElementById('privateKey').textContent = privateWif;
+        document.getElementById('showBip32Passphrase').textContent = passphrase;
+        new QRious({
+          element: document.getElementById('privateKeyCanvas'),
+          value: privateWif,
+          size: 150
+        });
+      }
+      </script>
+
+      <div class="shadow">
+        <table class="row">
+          <tr>
+            <td>
+              <h5>Public Key</h5>
+              <canvas id="publicKeyCanvas1"></canvas>
+            </td>
+          </tr>
+        </table>
+        <div class="row">
+          <h5>Public Key <span style="color:green">(SHARE)</span></h5>
+          <span id="publicKey1" class="CopyText" onclick="onclickSelect('publicKey1')()"></span>
+          <br/>
+        </div>
+        <br/>
+      </div>
+      <br />
+
+      <div class="shadow">
+        <table class="row">
+          <tr>
+            <td>
+              <h5>Public Key</h5>
+              <canvas id="publicKeyCanvas"></canvas>
+            </td>
+            <td>
+              <h5>Private Key </h5>
+              <canvas id="privateKeyCanvas"></canvas>
+            </td>
+          </tr>
+        </table>
+
+        <div class="row">
+          <h5>Public Key <span style="color:green">(SHARE)</span></h5>
+          <span id="publicKey" class="CopyText" onclick="onclickSelect('publicKey')()"></span>
+          <br/>
+
+          <h5>Private Key <span style="color:red">(DON'T SHARE)</span></h5>
+          <span id="privateKey" class="CopyText" onclick="onclickSelect('privateKey')()"></span>
+          <br/>
+
+          <h5>Mnemonic Phrase <span style="color:red">(DON'T SHARE)</span></h5>
+          <small>
+            <table>
+              <tr>
+                <td>Mnemonic</td>
+                <td><span class="CopyText" id="showBip32Phrase"></span></td>
+              </tr>
+              <tr>
+                <td>Passphrase</td>
+                <td><span class="CopyText" id="showBip32Passphrase" onclick="onclickSelect('showBip32Passphrase')()"></span></td>
+              </tr>
+              <tr>
+                <td>Path</td>
+                <td><span class="CopyText" id="showBip32Path" onclick="onclickSelect('showBip32Path')()">m/44'/194'/0'/0/0</span></td>
+              </tr>
+            </table>
+          </small>
+          <br/>
+        </div>
+      </div>
+
+    </div>
   </main>
   <footer>
     <hr/>
-    License: <a href="http://unlicense.org">unlicense</a> | Author: <a href="https://steemit.com/@jamesc">jamesc</a> | Contact: <u>slim2k</u>@keybase, <u>slim180</u>@telegram, github/<a href="https://github.com/jcalfee">jcalfee</a>
+    <span id="footerDate" ></span>
+    <script>document.getElementById('footerDate').innerText = new Date().toDateString()</script>
+    &ndash;
+    <span id="footerHref" ></span>
+    <script>document.getElementById('footerHref').innerText = document.location.href</script>
+
+    <br/>
+    Contact: slim180@telegram, <a href="https://github.com/jcalfee/bip39-chooser">github/jcalfee/bip39-chooser</a> |
+    <a href="http://unlicense.org">Unlicense</a>
+
   </footer>
 </body>
 </html>
