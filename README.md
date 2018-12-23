@@ -1,6 +1,6 @@
 # Greetings!
 
-Here is the <a href="https://jcalfee.github.io/Private Key Phrase Chooser (BIP39).html">Online</a> version..
+Here is the <a href="https://jcalfee.github.io/bip39-chooser.html">Online</a> version..
 
 This tool can generate a secure random mnemonic phrase that you may then personally modify. Your personal word selections help you to ensure that the phrase truly is random. This page calculates the last word programmatically so you'll have a valid Bip39 phrase.
 
