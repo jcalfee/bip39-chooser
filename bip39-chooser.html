@@ -5,7 +5,7 @@
 <meta name="author" content="jcalfee" />
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <meta name="description" content="BIP39 creator / chooser">
-<title>Private Key Phrase Chooser (BIP39)</title>
+<title>bip39-chooser</title>
 
 <link href="src/bip39-chooser.css" rel="stylesheet" type="text/css"/>
 
@@ -279,7 +279,7 @@ if(window) {
 
 <body>
   <header class="container">
-    <h3>BIP39 Mnemonic Key</h3>
+    <h4>BIP39 Mnemonic Key</h4>
   </header>
   <main class="container">
     <script>
@@ -329,6 +329,14 @@ if(window) {
           const backupMsg = createEl('h5', 'This is your Backup, keep it secret.')
           backupMsg.style = 'color: lightcoral'
           childDisplay.appendChild(backupMsg)
+
+          if(window && window['history'] !== undefined) {
+            const back = createEl('button', '↞ Back')
+            back.onclick = function() {
+              history.back()
+            }
+            childDisplay.appendChild(back)
+          }
 
           // remove prior screen
           clearPhraseChooser()
@@ -428,7 +436,7 @@ if(window) {
 
         <br/>
         <button id="submitSettings" onClick="onSubmitSettings(true); return false">✔</button>
-        <small><label for="submitSettings">Choose</label></small>
+        <small><label for="submitSettings">Submit</label></small>
         <span style="float: right">
           <a onclick="toggleDisplay('greetingsInfo')" title="Greetings!" id="greetingsMore">[?]</a>
             <!-- <img src="https://www.freeiconspng.com/uploads/info-icon-10.png" style="width: 30px"> -->
@@ -543,7 +551,7 @@ if(window) {
 
       <br/>
 
-      <h2>About the Mnemonic Phrase</h2>
+      <h4>About the Mnemonic Phrase</h4>
       <p>
         The <a href="https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki">BIP39 Mnemonic phrase</a>
         is a widely used standard for encoding a private seed used to access private
@@ -557,12 +565,12 @@ if(window) {
         </ul>
       </p>
 
-      <h2>Checksum</h2>
+      <h4>Checksum</h4>
 
       <p>The last word is chosen by an algorithm designed to validate the
       entire phrase.</p>
 
-      <h2>Deterministic Phrases</h2>
+      <h4>Deterministic Phrases</h4>
       <p>Accepting a generated mnemonic phrase is a bad idea if the random
         number generator can not be fully audited and understood.  A bug or
         exploit in the random number generator could allow a 3rd party to
@@ -700,7 +708,7 @@ if(window) {
         </div>
         <br/>
       </div>
-      <br />
+      <hr/>
 
       <div class="shadow">
         <table class="row">
