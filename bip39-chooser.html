@@ -334,6 +334,8 @@ if(window) {
             const back = createEl('button', '↞ Back')
             back.onclick = function() {
               history.back()
+              const passphrase = document.getElementById('validatePhrase')
+              passphrase.value = mnemonic
             }
             childDisplay.appendChild(back)
           }
@@ -463,6 +465,7 @@ if(window) {
             <li>Turn off the Internet connection now and while creating your phrase.</li>
             <li>Open this page in a Private Browsing Window.  Private Browsing will disable web plug-ins storage (also called: Private Tab, New Private Window, New Incognito Window).</li>
             <li>Use the browser's <u>Save Page As&hellip;</u> feature to save an immutable or off-line version of this tool (remember to refresh the page first).</li>
+            <li>Create a hardware wallet (<a href="https://busy.org/trezor/@furion/build-yourself-a-trezor">guide</a>)</li>
           </ul>
         </div>
       </div>
@@ -483,9 +486,11 @@ if(window) {
             try {
               const phrase = document.getElementById('validatePhrase')
               const words = phrase.value.trim().split(/ +/)
+              const endsInSpace = / $/.test(phrase.value)
+              const invalidWordCount = [12, 15, 18, 21, 24].indexOf(words.length) === -1
               let suggestionText = [], isValid = false
 
-              if([12, 15, 18, 21, 24].indexOf(words.length) === -1) {
+              if(!endsInSpace && invalidWordCount) { // !endsInSpace allows for spellchecking while typing in phrase
                 suggestionText.push('Invalid word count')
               } else {
                 const language = document.getElementById('language').value
@@ -499,11 +504,13 @@ if(window) {
                       break
                     }
                   }
-                  if(bip39Checker.normalize(phrase.value) !== phrase.value) {
-                    suggestionText.push('Invalid: characters or extraneous spaces or case')
-                  }
-                  if(suggestionText.length === 0) {
-                    suggestionText.push('Out of place word or words')
+                  if(!invalidWordCount) {
+                    if(bip39Checker.normalize(phrase.value) !== phrase.value) {
+                      suggestionText.push('Invalid: characters or extraneous spaces or case')
+                    }
+                    if(suggestionText.length === 0) {
+                      suggestionText.push('Incorrect or out of place words')
+                    }
                   }
                 }
               }
@@ -587,11 +594,6 @@ if(window) {
           one additional word as the last word in the phrase.</li>
         <li>Carefully backup the phrase.  For the written backup, write on a hard-surface.</li>
         <li>Use the new phrase soon in the desired tool like a hardware wallet to restore the phrase.</li>
-      </ul>
-
-      <h4>Secure your Hardware (<a href="https://steemit.com/trezor/@furion/build-yourself-a-trezor">guide</a>)</h4>
-      <p>Perform some of the following depending on your desired level of security.</p>
-      <ul>
       </ul>
 
       <h4>About the drop-downs</h4>
