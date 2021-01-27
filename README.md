@@ -13,7 +13,7 @@ The initial phrase is generated from the browser's secure random generator, addi
 * Create or validate mnemonic phrases from cold-storage
 
 ---
-![image.png](https://images.hive.blog/DQmSSQM5BbdYMeqkxoqVxZCvkuvHMS9Cr9b8nZCN8wCjxXX/image.png)
+![image.png](https://images.hive.blog/DQmeU5qsvkfuYSM5yZELAGsYPDEKm9A4fEHeYVhjos6huBv/image.png)
 
 ---
-![image.png](https://images.hive.blog/DQmeUtvW4nYTymBpxcAHka4RJ1y6oYWErAL99g2o5WatyZm/image.png)
+![image.png](https://images.hive.blog/DQmaTnjdJf5mcwEEpdPeDRJBFnEJ2oLpwXtvUFh1GD3Z8ji/image.png)

@@ -11,7 +11,7 @@
     "build": "npm run coinExports && npm run randomBytes && npm run QRious"
   },
   "author": "jamesc",
-  "license": "MIT",
+  "license": "GPL-3.0-only",
   "dependencies": {
     "bip39": "^2.5.0",
     "bip39-checker": "^1.1.7",
