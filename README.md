@@ -11,7 +11,7 @@ The initial phrase is generated from the browser's secure random generator, addi
 # Run
 
 - Download or clone this repository
-- Run `npm install' then `npm run build` then open `./bip39-chooser.html`
+- Run `npm install` then `npm run build` then open `./bip39-chooser.html`
 
 # Overview
 
